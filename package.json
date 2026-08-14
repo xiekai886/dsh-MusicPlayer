@@ -1,7 +1,7 @@
 {
   "name": "@dsh-external/dsh-music",
   "version": "0.1.0",
-  "description": "边聊边听歌：悬浮音乐播放器（APlayer 风格）+ 内置曲库 + agent 音乐工具。Music player plugin for DeepSeek Harness.",
+  "description": "APlayer-inspired floating music player for DeepSeek Harness Web with NetEase Cloud Music playlist import & song/artist search — chat and listen at the same time. 边聊边听歌的悬浮音乐播放器插件。",
   "type": "module",
   "main": "index.js",
   "exports": {
