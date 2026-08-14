@@ -1,0 +1,4 @@
+# dsh-music bundle patch: inserts this plugin into a profile's layer stack.
+- insert:
+    - id: dsh-music
+      name: '@dsh-external/dsh-music'
