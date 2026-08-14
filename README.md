@@ -1,6 +1,6 @@
-# dsh-music 🎵
+# dsh-MusicPlayer 🎵
 
-**dsh-music** 是一款面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web 的 APlayer 风格悬浮音乐播放器插件，支持折叠/展开双形态与自由拖拽定位。深度接入网易云音乐：按链接或 ID 导入歌单、按歌名/歌手搜索单曲一键加入播放列表；多层音频源解析（Meting → outer/url）绕开浏览器跨域与防盗链，最大化可播放曲目覆盖（含部分受限歌曲，实际可播性取决于版权状态与解析源）。内置 agent 音乐工具，对话中即可点歌、切歌、控制音量。零外部前端依赖——手写模块格式与内联 SVG 图标。
+**dsh-MusicPlayer** 是一款面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web 的 APlayer 风格悬浮音乐播放器插件，支持折叠/展开双形态与自由拖拽定位。深度接入网易云音乐：按链接或 ID 导入歌单、按歌名/歌手搜索单曲一键加入播放列表；多层音频源解析（Meting → outer/url）绕开浏览器跨域与防盗链，最大化可播放曲目覆盖（含部分受限歌曲，实际可播性取决于版权状态与解析源）。内置 agent 音乐工具，对话中即可点歌、切歌、控制音量。零外部前端依赖——手写模块格式与内联 SVG 图标。
 
 An APlayer-inspired floating music player plugin for DeepSeek Harness Web with a collapsible/expandable draggable frosted-glass card, deep NetEase Cloud Music integration (playlist import by link/ID, search by title/artist), a multi-layer audio source resolver (Meting → outer/url) that works around browser CORS and anti-leeching for maximum playable coverage, and an agent-facing music tool — queue, skip, pause, and control volume right from the chat. Zero external front-end dependencies.
 
