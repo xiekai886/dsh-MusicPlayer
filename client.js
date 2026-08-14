@@ -517,9 +517,45 @@ window.__ModuleLoader__.load({
 					}
 				}).catch(function () { setError("播放器服务连接失败，稍后重试"); });
 			};
-			var seek = function (event) {
+			// ── draggable progress bar ─────────────────────────────────────────
+			var progressRef = react.useRef(null);
+			var draggingRef = react.useRef(false);
+			var [dragRatio, setDragRatio] = react.useState(null);
+
+			// Seek to a 0..1 position; only meaningful when the duration is finite
+			// (the host proxy now serves Range requests, so streamed tracks have
+			// a real duration instead of Infinity).
+			var seekTo = function (ratio) {
 				var audio = audioRef.current;
-				if (audio && duration > 0) audio.currentTime = Number(event.target.value);
+				if (audio && Number.isFinite(duration) && duration > 0) {
+					audio.currentTime = ratio * duration;
+				}
+			};
+			var progressRatio = function (event, el) {
+				var rect = (el || event.currentTarget).getBoundingClientRect();
+				return Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+			};
+			var onProgressMove = function (event) {
+				var el = progressRef.current;
+				if (!el || !draggingRef.current) return;
+				var ratio = progressRatio(event, el);
+				setDragRatio(ratio);
+				seekTo(ratio);
+			};
+			var onProgressUp = function () {
+				draggingRef.current = false;
+				setDragRatio(null);
+				window.removeEventListener("mousemove", onProgressMove);
+				window.removeEventListener("mouseup", onProgressUp);
+			};
+			var onProgressDown = function (event) {
+				if (event.button !== 0) return;
+				draggingRef.current = true;
+				var ratio = progressRatio(event);
+				setDragRatio(ratio);
+				seekTo(ratio);
+				window.addEventListener("mousemove", onProgressMove);
+				window.addEventListener("mouseup", onProgressUp);
 			};
 			var volume = function (event) {
 				var value = Number(event.target.value);
@@ -642,15 +678,16 @@ window.__ModuleLoader__.load({
 						h("div", { className: "dshm-row" }, [
 							h("div", {
 								className: "dshm-progress",
-								onClick: function (event) {
-									var rect = event.currentTarget.getBoundingClientRect();
-									var ratio = (event.clientX - rect.left) / rect.width;
-									var audio = audioRef.current;
-									if (audio && duration > 0) audio.currentTime = ratio * duration;
-								}
+								ref: progressRef,
+								onMouseDown: onProgressDown,
+								title: "拖动调整播放进度"
 							}, h("div", {
 								className: "dshm-progress-fill",
-								style: { width: (duration > 0 ? Math.min(100, current / duration * 100) : 0) + "%" }
+								style: {
+									width: (dragRatio !== null
+										? dragRatio * 100
+										: duration > 0 ? Math.min(100, current / duration * 100) : 0) + "%"
+								}
 							})),
 							h("span", { className: "dshm-time" }, formatTime(current) + " / " + formatTime(duration))
 						]),

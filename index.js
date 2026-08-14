@@ -445,9 +445,21 @@ async function resolveStreamUrl(id) {
 	return await resolveOuterUrl(id);
 }
 
+/** Write audio response head mirroring the upstream status and range headers. */
+function writeAudioHead(res, upstream) {
+	res.writeHead(upstream.statusCode ?? 200, {
+		"content-type": upstream.headers["content-type"] ?? "audio/mpeg",
+		"cache-control": "no-store",
+		"accept-ranges": upstream.headers["accept-ranges"] ?? "bytes",
+		...(upstream.headers["content-range"] ? { "content-range": upstream.headers["content-range"] } : {}),
+		...(upstream.headers["content-length"] ? { "content-length": upstream.headers["content-length"] } : {})
+	});
+}
+
 /** Pipe one final audio url into the browser response with timeout/abort safety. */
-function pipeStream(url, res, fail) {
+function pipeStream(url, range, res, fail) {
 	const headers = { "user-agent": NET_EASE_UA, referer: NET_EASE_REFERER };
+	if (typeof range === "string" && range !== "") headers.range = range;
 	let active;
 	// When the browser aborts (seek/skip/reload), tear the upstream down instead
 	// of letting it pipe into a dead response and emit unhandled errors.
@@ -461,7 +473,7 @@ function pipeStream(url, res, fail) {
 	req.on("response", (upstream) => {
 		if (upstream.statusCode >= 300 && upstream.statusCode < 400 && upstream.headers.location) {
 			upstream.resume();
-			const next = agentRequest(upstream.headers.location, { "user-agent": NET_EASE_UA })
+			const next = agentRequest(upstream.headers.location, { "user-agent": NET_EASE_UA, ...(typeof range === "string" && range !== "" ? { range } : {}) })
 				.on("error", () => fail("音频流获取失败"));
 			next.setTimeout(12000, () => {
 				next.destroy();
@@ -469,38 +481,32 @@ function pipeStream(url, res, fail) {
 			});
 			active = next;
 			next.on("response", (final) => {
-				if (final.statusCode !== 200) {
+				if (final.statusCode !== 200 && final.statusCode !== 206) {
 					final.resume();
 					fail(`上游返回 ${final.statusCode}`);
 					return;
 				}
 				final.on("error", () => { /* aborted by client */ });
-				res.writeHead(200, {
-					"content-type": final.headers["content-type"] ?? "audio/mpeg",
-					"cache-control": "no-store"
-				});
+				writeAudioHead(res, final);
 				final.pipe(res);
 			});
 			next.end();
 			return;
 		}
-		if (upstream.statusCode !== 200) {
+		if (upstream.statusCode !== 200 && upstream.statusCode !== 206) {
 			upstream.resume();
 			fail(`上游返回 ${upstream.statusCode}`);
 			return;
 		}
 		upstream.on("error", () => { /* aborted by client */ });
-		res.writeHead(200, {
-			"content-type": upstream.headers["content-type"] ?? "audio/mpeg",
-			"cache-control": "no-store"
-		});
+		writeAudioHead(res, upstream);
 		upstream.pipe(res);
 	});
 	req.end();
 }
 
 /** Stream a NetEase track through this host (bypasses browser CORS/anti-leech). */
-async function proxyNeteaseStream(id, res) {
+async function proxyNeteaseStream(id, req, res) {
 	const fail = (message) => {
 		// The response may already be gone (browser aborted the stream on skip).
 		try {
@@ -520,7 +526,7 @@ async function proxyNeteaseStream(id, res) {
 		fail("音频流获取失败");
 		return;
 	}
-	pipeStream(target, res, fail);
+	pipeStream(target, req.headers.range, res, fail);
 }
 
 /** Parse an external URL for the NetEase song or playlist id (for the agent tool). */
@@ -626,7 +632,7 @@ export function apply(ctx) {
 				json(res, { error: "无效的歌曲 id" }, 400);
 				return;
 			}
-			proxyNeteaseStream(id, res);
+			proxyNeteaseStream(id, req, res);
 		}
 	}));
 
