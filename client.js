@@ -28,9 +28,13 @@ window.__ModuleLoader__.load({
 			".dshm-title{font-size:13px;font-weight:600;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.4);transition:font-size .35s cubic-bezier(.22,1,.36,1),line-height .35s cubic-bezier(.22,1,.36,1)}",
 			".dshm-header-mini .dshm-title{font-size:12px;line-height:16px}",
 			".dshm-head-actions{position:relative;flex:none;width:92px;height:34px}",
-			".dshm-head-group{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:0;pointer-events:none;transition:opacity .18s ease-out}",
+			".dshm-head-group{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:0;pointer-events:none}",
 			".dshm-head-group-in{opacity:1;pointer-events:auto}",
-			".dshm-head-group-out{opacity:0;pointer-events:none}",
+			".dshm-head-group-out{opacity:0;pointer-events:none;transition:opacity .18s ease-out}",
+			// 视图过渡期间新快照会"冻结"透明度过渡导致闪现；
+			// 搜索/折叠键改用 animation + delay，等视图过渡结束后再淡入
+			".dshm-vt-fade{animation:dshm-fade-in .28s ease-out .42s both}",
+			"@keyframes dshm-fade-in{from{opacity:0}to{opacity:1}}",
 			".dshm-play-btn{view-transition-name:dshm-play}",
 			".dshm-next-btn{view-transition-name:dshm-next}",
 			".dshm-head-group-out .dshm-play-btn,.dshm-head-group-out .dshm-next-btn{view-transition-name:none}",
@@ -721,10 +725,10 @@ window.__ModuleLoader__.load({
 								})
 							}, h(Icon, { name: "chevronDown", size: 14 }))
 						]),
-						// 展开态按钮组：搜索切换 / 折叠（与折叠组交叉淡入淡出）
+						// 展开态按钮组：搜索切换 / 折叠（视图过渡结束后淡入）
 						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-in" : " dshm-head-group-out"), key: "full" }, [
 							h("button", {
-								className: "dshm-btn",
+								className: "dshm-btn dshm-vt-fade",
 								title: searchMode ? "返回播放列表" : "搜索网易云音乐",
 								onClick: handleClick(function (event) {
 									event.stopPropagation();
@@ -735,7 +739,7 @@ window.__ModuleLoader__.load({
 								})
 							}, h(Icon, { name: searchMode ? "arrowLeft" : "search", size: 14 })),
 							h("button", {
-								className: "dshm-btn",
+								className: "dshm-btn dshm-vt-fade",
 								title: "折叠",
 								onClick: handleClick(function (event) {
 									event.stopPropagation();
