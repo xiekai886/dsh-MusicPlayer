@@ -28,8 +28,9 @@ window.__ModuleLoader__.load({
 			".dshm-title{font-size:13px;font-weight:600;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.4);transition:font-size .35s cubic-bezier(.22,1,.36,1),line-height .35s cubic-bezier(.22,1,.36,1)}",
 			".dshm-header-mini .dshm-title{font-size:12px;line-height:16px}",
 			".dshm-head-actions{position:relative;flex:none;width:92px;height:34px}",
-			".dshm-head-group{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:1;transform:none;transition:opacity .18s ease-out,transform .32s cubic-bezier(.22,1,.36,1)}",
-			".dshm-head-group-out{opacity:0;transform:translateY(8px);pointer-events:none}",
+			".dshm-head-group{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:0;transform:translateY(-14px);pointer-events:none;transition:opacity .22s ease-out,transform .38s cubic-bezier(.22,1,.36,1)}",
+			".dshm-head-group-in{opacity:1;transform:none;pointer-events:auto}",
+			".dshm-head-group-out{opacity:0;transform:translateY(14px);pointer-events:none}",
 			".dshm-artist{font-size:10.5px;line-height:14px;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn{flex:none;width:26px;height:26px;border:none;border-radius:9px;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn:hover{background:rgba(255,255,255,0.18)}",
@@ -42,7 +43,8 @@ window.__ModuleLoader__.load({
 			".dshm-progress-fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#fff,rgba(255,255,255,0.72));box-shadow:0 0 8px rgba(255,255,255,0.5)}",
 			".dshm-time{font-size:10px;color:rgba(255,255,255,0.78);font-variant-numeric:tabular-nums;width:76px;text-align:center;flex:none;text-shadow:0 1px 3px rgba(0,0,0,0.3)}",
 			".dshm-slider{flex:1;accent-color:#fff;height:4px;cursor:pointer}",
-			".dshm-controls{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px}",
+			".dshm-controls{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;opacity:0;transform:translateY(-8px);transition:opacity .25s ease-out .1s,transform .38s cubic-bezier(.22,1,.36,1) .1s}",
+			".dshm-card-expanded .dshm-controls{opacity:1;transform:none}",
 			".dshm-search{display:flex;gap:6px;margin-top:8px}",
 			".dshm-input{flex:1;min-width:0;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);border-radius:10px;color:#fff;font-size:12px;padding:5px 9px;outline:none;backdrop-filter:blur(6px)}",
 			".dshm-input:focus{border-color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.18)}",
@@ -631,8 +633,8 @@ window.__ModuleLoader__.load({
 						h("div", { className: "dshm-artist" }, track ? track.artist : (expanded ? "点一首歌开始吧" : "点击展开"))
 					]),
 					h("div", { className: "dshm-head-actions" }, [
-						// 折叠态按钮组：播放 / 下一首 / 展开
-						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-out" : ""), key: "mini" }, [
+						// 折叠态按钮组：播放 / 下一首 / 展开（向下滑出，仿佛被展开的面板推下去）
+						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-out" : " dshm-head-group-in"), key: "mini" }, [
 							h("button", {
 								className: "dshm-btn dshm-btn-primary",
 								title: remote && remote.playing ? "暂停" : "播放",
@@ -658,8 +660,8 @@ window.__ModuleLoader__.load({
 								})
 							}, h(Icon, { name: "chevronDown", size: 14 }))
 						]),
-						// 展开态按钮组：搜索切换 / 折叠
-						h("div", { className: "dshm-head-group" + (expanded ? "" : " dshm-head-group-out"), key: "full" }, [
+						// 展开态按钮组：搜索切换 / 折叠（从上方滑入，跟随面板一起落下）
+						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-in" : " dshm-head-group-out"), key: "full" }, [
 							h("button", {
 								className: "dshm-btn",
 								title: searchMode ? "返回播放列表" : "搜索网易云音乐",
