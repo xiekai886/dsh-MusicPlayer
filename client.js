@@ -27,10 +27,10 @@ window.__ModuleLoader__.load({
 			".dshm-meta{flex:1;min-width:0}",
 			".dshm-title{font-size:13px;font-weight:600;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.4);transition:font-size .35s cubic-bezier(.22,1,.36,1),line-height .35s cubic-bezier(.22,1,.36,1)}",
 			".dshm-header-mini .dshm-title{font-size:12px;line-height:16px}",
-			".dshm-head-actions{position:relative;flex:none;width:92px;height:34px}",
-			".dshm-head-group{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:0;transform:translateY(-14px);pointer-events:none;transition:opacity .22s ease-out,transform .38s cubic-bezier(.22,1,.36,1)}",
-			".dshm-head-group-in{opacity:1;transform:none;pointer-events:auto}",
-			".dshm-head-group-out{opacity:0;transform:translateY(14px);pointer-events:none}",
+			".dshm-head-actions{display:flex;align-items:center;gap:4px;flex:none}",
+			".dshm-head-group{display:flex;align-items:center;gap:4px;flex:none}",
+			".dshm-chevron{display:flex;transition:transform .38s cubic-bezier(.22,1,.36,1)}",
+			".dshm-chevron-up{transform:rotate(180deg)}",
 			".dshm-artist{font-size:10.5px;line-height:14px;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn{flex:none;width:26px;height:26px;border:none;border-radius:9px;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn:hover{background:rgba(255,255,255,0.18)}",
@@ -43,7 +43,7 @@ window.__ModuleLoader__.load({
 			".dshm-progress-fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#fff,rgba(255,255,255,0.72));box-shadow:0 0 8px rgba(255,255,255,0.5)}",
 			".dshm-time{font-size:10px;color:rgba(255,255,255,0.78);font-variant-numeric:tabular-nums;width:76px;text-align:center;flex:none;text-shadow:0 1px 3px rgba(0,0,0,0.3)}",
 			".dshm-slider{flex:1;accent-color:#fff;height:4px;cursor:pointer}",
-			".dshm-controls{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;opacity:0;transform:translateY(-8px);transition:opacity .25s ease-out .1s,transform .38s cubic-bezier(.22,1,.36,1) .1s}",
+			".dshm-controls{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;opacity:0;transform:translateY(-8px);transition:opacity .18s ease-out,transform .38s cubic-bezier(.22,1,.36,1)}",
 			".dshm-card-expanded .dshm-controls{opacity:1;transform:none}",
 			".dshm-search{display:flex;gap:6px;margin-top:8px}",
 			".dshm-input{flex:1;min-width:0;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);border-radius:10px;color:#fff;font-size:12px;padding:5px 9px;outline:none;backdrop-filter:blur(6px)}",
@@ -65,7 +65,7 @@ window.__ModuleLoader__.load({
 			".dshm-mode{font-size:10.5px;color:rgba(255,255,255,0.8);text-shadow:0 1px 3px rgba(0,0,0,0.3)}",
 			".dshm-empty{font-size:11px;color:rgba(255,255,255,0.66);text-align:center;padding:7px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
 			".dshm-note{font-size:10px;color:rgba(255,255,255,0.55);margin-top:6px;line-height:14px}",
-			".dshm-panel{display:grid;grid-template-rows:0fr;opacity:0;transform:translateY(-10px);pointer-events:none;transition:grid-template-rows .36s cubic-bezier(.22,1,.36,1),opacity .2s ease-out,transform .36s cubic-bezier(.22,1,.36,1)}",
+			".dshm-panel{display:grid;grid-template-rows:0fr;opacity:0;transform:translateY(-10px);pointer-events:none;transition:grid-template-rows .36s cubic-bezier(.22,1,.36,1),opacity .12s ease-out,transform .36s cubic-bezier(.22,1,.36,1)}",
 			".dshm-card-expanded .dshm-panel{grid-template-rows:1fr;opacity:1;transform:translateY(0);pointer-events:auto}",
 			".dshm-panel-inner{overflow:hidden;min-height:0}"
 		].join("");
@@ -633,8 +633,9 @@ window.__ModuleLoader__.load({
 						h("div", { className: "dshm-artist" }, track ? track.artist : (expanded ? "点一首歌开始吧" : "点击展开"))
 					]),
 					h("div", { className: "dshm-head-actions" }, [
-						// 折叠态按钮组：播放 / 下一首 / 展开（向下滑出，仿佛被展开的面板推下去）
-						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-out" : " dshm-head-group-in"), key: "mini" }, [
+						// 常驻按钮组：播放 / 下一首 / 展开收起（两态完全同位置，
+						// 箭头用旋转过渡——切换时按钮零位移，杜绝闪现）
+						h("div", { className: "dshm-head-group" }, [
 							h("button", {
 								className: "dshm-btn dshm-btn-primary",
 								title: remote && remote.playing ? "暂停" : "播放",
@@ -653,34 +654,14 @@ window.__ModuleLoader__.load({
 							}, h(Icon, { name: "next", size: 14 })),
 							h("button", {
 								className: "dshm-btn",
-								title: "展开播放器",
+								title: expanded ? "折叠" : "展开播放器",
 								onClick: handleClick(function (event) {
 									event.stopPropagation();
 									toggleCollapsed();
 								})
-							}, h(Icon, { name: "chevronDown", size: 14 }))
-						]),
-						// 展开态按钮组：搜索切换 / 折叠（从上方滑入，跟随面板一起落下）
-						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-in" : " dshm-head-group-out"), key: "full" }, [
-							h("button", {
-								className: "dshm-btn",
-								title: searchMode ? "返回播放列表" : "搜索网易云音乐",
-								onClick: handleClick(function (event) {
-									event.stopPropagation();
-									setSearchMode(function (prev) {
-										if (!prev) { setSearchQuery(""); setResults(null); setSearchError(null); }
-										return !prev;
-									});
-								})
-							}, h(Icon, { name: searchMode ? "arrowLeft" : "search", size: 14 })),
-							h("button", {
-								className: "dshm-btn",
-								title: "折叠",
-								onClick: handleClick(function (event) {
-									event.stopPropagation();
-									toggleCollapsed();
-								})
-							}, h(Icon, { name: "chevronUp", size: 14 }))
+							}, h("span", {
+								className: "dshm-chevron" + (expanded ? " dshm-chevron-up" : "")
+							}, h(Icon, { name: "chevronDown", size: 14 })))
 						])
 					])
 				]),
@@ -701,16 +682,20 @@ window.__ModuleLoader__.load({
 										: duration > 0 ? Math.min(100, current / duration * 100) : 0) + "%"
 								}
 							})),
-							h("span", { className: "dshm-time" }, formatTime(current) + " / " + formatTime(duration))
+							h("span", { className: "dshm-time" }, formatTime(current) + " / " + formatTime(duration)),
+							h("button", {
+								className: "dshm-btn",
+								title: searchMode ? "返回播放列表" : "搜索网易云音乐",
+								onClick: handleClick(function () {
+									setSearchMode(function (prev) {
+										if (!prev) { setSearchQuery(""); setResults(null); setSearchError(null); }
+										return !prev;
+									});
+								})
+							}, h(Icon, { name: searchMode ? "arrowLeft" : "search", size: 13 }))
 						]),
 						h("div", { className: "dshm-controls" }, [
 							h("button", { className: "dshm-btn", title: "上一首", onClick: handleClick(function () { run({ action: "prev" }); }) }, h(Icon, { name: "prev", size: 15 })),
-							h("button", {
-								className: "dshm-btn dshm-btn-primary",
-								title: remote && remote.playing ? "暂停" : "播放",
-								onClick: handleClick(function () { run({ action: remote && remote.playing ? "pause" : "play" }); })
-							}, h(Icon, { name: remote && remote.playing ? "pause" : "play", size: 16 })),
-							h("button", { className: "dshm-btn", title: "下一首", onClick: handleClick(function () { run({ action: "next" }); }) }, h(Icon, { name: "next", size: 15 })),
 							h("button", {
 								className: "dshm-btn" + (remote && remote.mode !== "list" ? " dshm-btn-active" : ""),
 								title: "切换模式：" + modeLabel[remote ? remote.mode : "list"],
