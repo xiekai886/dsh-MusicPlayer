@@ -27,10 +27,10 @@ window.__ModuleLoader__.load({
 			".dshm-meta{flex:1;min-width:0}",
 			".dshm-title{font-size:13px;font-weight:600;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.4);transition:font-size .35s cubic-bezier(.22,1,.36,1),line-height .35s cubic-bezier(.22,1,.36,1)}",
 			".dshm-header-mini .dshm-title{font-size:12px;line-height:16px}",
-			".dshm-head-actions{display:flex;align-items:center;gap:4px;flex:none}",
-			".dshm-head-group{display:flex;align-items:center;gap:4px;flex:none}",
-			".dshm-chevron{display:flex;transition:transform .38s cubic-bezier(.22,1,.36,1)}",
-			".dshm-chevron-up{transform:rotate(180deg)}",
+			".dshm-head-actions{position:relative;flex:none;width:92px;height:34px}",
+			".dshm-head-group{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:0;transform:translateY(-12px);pointer-events:none;transition:opacity .22s ease-out,transform .38s cubic-bezier(.22,1,.36,1)}",
+			".dshm-head-group-in{opacity:1;transform:none;pointer-events:auto}",
+			".dshm-head-group-out{opacity:0;transform:translateY(12px);pointer-events:none}",
 			".dshm-artist{font-size:10.5px;line-height:14px;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn{flex:none;width:26px;height:26px;border:none;border-radius:9px;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn:hover{background:rgba(255,255,255,0.18)}",
@@ -503,13 +503,49 @@ window.__ModuleLoader__.load({
 				}
 			};
 
+			// FLIP shared play/next buttons between the header and the controls row:
+			// record the old rect before the state flips, then fly the new button
+			// from that rect to its resting place — no flash, no duplicate buttons.
+			var playFlipRef = react.useRef(null);
+			var nextFlipRef = react.useRef(null);
+			var flipFromRef = react.useRef(null);
+
 			var toggleCollapsed = function () {
+				var p = playFlipRef.current;
+				var n = nextFlipRef.current;
+				flipFromRef.current = {
+					play: p ? p.getBoundingClientRect() : null,
+					next: n ? n.getBoundingClientRect() : null
+				};
 				setCollapsed(function (prev) {
 					var next = !prev;
 					try { localStorage.setItem(STORE_COLLAPSED, next ? "1" : "0"); } catch { /* ignore */ }
 					return next;
 				});
 			};
+
+			// After the flip, animate the newly rendered play/next buttons from the
+			// recorded old positions to their new layout positions.
+			react.useLayoutEffect(function () {
+				var from = flipFromRef.current;
+				flipFromRef.current = null;
+				if (!from) return;
+				var fly = function (el, fromRect) {
+					if (!el || !fromRect) return;
+					var to = el.getBoundingClientRect();
+					var dx = fromRect.left - to.left;
+					var dy = fromRect.top - to.top;
+					var sx = fromRect.width / to.width;
+					var sy = fromRect.height / to.height;
+					el.style.transition = "none";
+					el.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
+					void el.getBoundingClientRect(); // commit the initial frame
+					el.style.transition = "transform .38s cubic-bezier(.22,1,.36,1)";
+					el.style.transform = "";
+				};
+				fly(playFlipRef.current, from.play);
+				fly(nextFlipRef.current, from.next);
+			}, [collapsed]);
 			var run = function (command) {
 				lastUserOpRef.current = Date.now();
 				postCommand(command).then(function (state) {
@@ -633,10 +669,10 @@ window.__ModuleLoader__.load({
 						h("div", { className: "dshm-artist" }, track ? track.artist : (expanded ? "点一首歌开始吧" : "点击展开"))
 					]),
 					h("div", { className: "dshm-head-actions" }, [
-						// 常驻按钮组：播放 / 下一首 / 展开收起（两态完全同位置，
-						// 箭头用旋转过渡——切换时按钮零位移，杜绝闪现）
-						h("div", { className: "dshm-head-group" }, [
+						// 折叠态按钮组：播放 / 下一首 / 展开（切换时 FLIP 飞到面板控制行）
+						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-out" : " dshm-head-group-in"), key: "mini" }, [
 							h("button", {
+								ref: playFlipRef,
 								className: "dshm-btn dshm-btn-primary",
 								title: remote && remote.playing ? "暂停" : "播放",
 								onClick: handleClick(function (event) {
@@ -645,6 +681,7 @@ window.__ModuleLoader__.load({
 								})
 							}, h(Icon, { name: remote && remote.playing ? "pause" : "play", size: 14 })),
 							h("button", {
+								ref: nextFlipRef,
 								className: "dshm-btn",
 								title: "下一首",
 								onClick: handleClick(function (event) {
@@ -654,14 +691,34 @@ window.__ModuleLoader__.load({
 							}, h(Icon, { name: "next", size: 14 })),
 							h("button", {
 								className: "dshm-btn",
-								title: expanded ? "折叠" : "展开播放器",
+								title: "展开播放器",
 								onClick: handleClick(function (event) {
 									event.stopPropagation();
 									toggleCollapsed();
 								})
-							}, h("span", {
-								className: "dshm-chevron" + (expanded ? " dshm-chevron-up" : "")
-							}, h(Icon, { name: "chevronDown", size: 14 })))
+							}, h(Icon, { name: "chevronDown", size: 14 }))
+						]),
+						// 展开态按钮组：搜索切换 / 折叠（与折叠组交叉淡入淡出）
+						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-in" : " dshm-head-group-out"), key: "full" }, [
+							h("button", {
+								className: "dshm-btn",
+								title: searchMode ? "返回播放列表" : "搜索网易云音乐",
+								onClick: handleClick(function (event) {
+									event.stopPropagation();
+									setSearchMode(function (prev) {
+										if (!prev) { setSearchQuery(""); setResults(null); setSearchError(null); }
+										return !prev;
+									});
+								})
+							}, h(Icon, { name: searchMode ? "arrowLeft" : "search", size: 14 })),
+							h("button", {
+								className: "dshm-btn",
+								title: "折叠",
+								onClick: handleClick(function (event) {
+									event.stopPropagation();
+									toggleCollapsed();
+								})
+							}, h(Icon, { name: "chevronUp", size: 14 }))
 						])
 					])
 				]),
@@ -682,20 +739,22 @@ window.__ModuleLoader__.load({
 										: duration > 0 ? Math.min(100, current / duration * 100) : 0) + "%"
 								}
 							})),
-							h("span", { className: "dshm-time" }, formatTime(current) + " / " + formatTime(duration)),
-							h("button", {
-								className: "dshm-btn",
-								title: searchMode ? "返回播放列表" : "搜索网易云音乐",
-								onClick: handleClick(function () {
-									setSearchMode(function (prev) {
-										if (!prev) { setSearchQuery(""); setResults(null); setSearchError(null); }
-										return !prev;
-									});
-								})
-							}, h(Icon, { name: searchMode ? "arrowLeft" : "search", size: 13 }))
+							h("span", { className: "dshm-time" }, formatTime(current) + " / " + formatTime(duration))
 						]),
 						h("div", { className: "dshm-controls" }, [
 							h("button", { className: "dshm-btn", title: "上一首", onClick: handleClick(function () { run({ action: "prev" }); }) }, h(Icon, { name: "prev", size: 15 })),
+							h("button", {
+								ref: playFlipRef,
+								className: "dshm-btn dshm-btn-primary",
+								title: remote && remote.playing ? "暂停" : "播放",
+								onClick: handleClick(function () { run({ action: remote && remote.playing ? "pause" : "play" }); })
+							}, h(Icon, { name: remote && remote.playing ? "pause" : "play", size: 16 })),
+							h("button", {
+								ref: nextFlipRef,
+								className: "dshm-btn",
+								title: "下一首",
+								onClick: handleClick(function () { run({ action: "next" }); })
+							}, h(Icon, { name: "next", size: 15 })),
 							h("button", {
 								className: "dshm-btn" + (remote && remote.mode !== "list" ? " dshm-btn-active" : ""),
 								title: "切换模式：" + modeLabel[remote ? remote.mode : "list"],
