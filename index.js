@@ -28,25 +28,18 @@ const NET_EASE_COOKIE = "NMTID=00Kf3uH0LvXq0vXq0vXq0vXq0vXq0vXq";
 const neteaseStreamUrl = (id) => `/dsh-music/netease/stream?id=${encodeURIComponent(id)}`;
 
 /**
- * The default built-in library is a NetEase Cloud Music playlist, configured
- * through the DSH_MUSIC_PLAYLIST environment variable (a playlist id or share
- * link). Empty means the built-in SoundHelix fallback stays in place.
+ * The built-in library is a NetEase Cloud Music playlist, configured through
+ * the DSH_MUSIC_PLAYLIST environment variable (a playlist id or share link).
+ * On startup the plugin loads it as the default queue; without a configured
+ * playlist the queue starts empty and can be filled via the player UI or the
+ * agent tool.
  */
 const DEFAULT_PLAYLIST_ID = process.env.DSH_MUSIC_PLAYLIST ?? "";
 
-/**
- * Built-in default tracks. Initially SoundHelix demo tracks (offline-safe
- * fallback); on startup the plugin swaps them for the default NetEase
- * playlist, so the built-in library is the user's own playlist.
- */
-let BUILTIN_TRACKS = Array.from({ length: 16 }, (_, i) => ({
-	id: `soundhelix-${i + 1}`,
-	title: `SoundHelix 示例曲目 ${i + 1}`,
-	artist: "SoundHelix",
-	url: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${i + 1}.mp3`
-}));
+/** Built-in default tracks: filled from the configured playlist at startup. */
+let BUILTIN_TRACKS = [];
 
-/** Refresh the built-in library from the default playlist (keeps fallback on failure). */
+/** Refresh the built-in library from the configured playlist. */
 async function refreshBuiltinTracks() {
 	if (DEFAULT_PLAYLIST_ID === "") return;
 	try {
@@ -60,7 +53,7 @@ async function refreshBuiltinTracks() {
 			url: neteaseStreamUrl(row.id)
 		}));
 	} catch {
-		/* keep the offline fallback */
+		/* keep the empty queue; the player can still import playlists manually */
 	}
 }
 
@@ -552,8 +545,7 @@ function parsePlaylistId(raw) {
 export function apply(ctx) {
 	const state = defaultState();
 
-	// Swap the built-in library for the default NetEase playlist at startup
-	// (SoundHelix demo tracks remain the offline fallback when the fetch fails).
+	// Load the configured NetEase playlist as the built-in queue at startup.
 	refreshBuiltinTracks().then(() => {
 		state.queue = composeQueue(state.custom, state.useBuiltin);
 		if (state.index >= state.queue.length) state.index = 0;
