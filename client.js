@@ -21,11 +21,15 @@ window.__ModuleLoader__.load({
 			"#dsh-music-root{position:fixed;left:0;top:0;z-index:2147483000;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;user-select:none}",
 			".dshm-card{width:" + WIDTH + "px;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03)),rgba(13,15,24,0.62);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,0.16);box-shadow:0 16px 48px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.18);color:#fff;cursor:default}",
 			".dshm-drag{cursor:grab}.dshm-drag:active{cursor:grabbing}",
-			".dshm-mini{display:flex;align-items:center;gap:8px;padding:8px 10px}",
-			".dshm-cover{flex:none;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.25),0 4px 12px rgba(0,0,0,0.3)}",
+			".dshm-header{display:flex;align-items:center;gap:10px;padding:8px 10px;position:relative}",
+			".dshm-cover{flex:none;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.25),0 4px 12px rgba(0,0,0,0.3);transition:width .35s cubic-bezier(.22,1,.36,1),height .35s cubic-bezier(.22,1,.36,1),border-radius .35s cubic-bezier(.22,1,.36,1),font-size .35s cubic-bezier(.22,1,.36,1)}",
 			".dshm-cover-lg{width:44px;height:44px;border-radius:13px;font-size:20px}",
 			".dshm-meta{flex:1;min-width:0}",
-			".dshm-title{font-size:12px;font-weight:600;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.4)}",
+			".dshm-title{font-size:13px;font-weight:600;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.4);transition:font-size .35s cubic-bezier(.22,1,.36,1),line-height .35s cubic-bezier(.22,1,.36,1)}",
+			".dshm-header-mini .dshm-title{font-size:12px;line-height:16px}",
+			".dshm-head-actions{position:relative;flex:none;width:92px;height:34px}",
+			".dshm-head-group{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:1;transform:none;transition:opacity .18s ease-out,transform .32s cubic-bezier(.22,1,.36,1)}",
+			".dshm-head-group-out{opacity:0;transform:translateY(8px);pointer-events:none}",
 			".dshm-artist{font-size:10.5px;line-height:14px;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn{flex:none;width:26px;height:26px;border:none;border-radius:9px;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn:hover{background:rgba(255,255,255,0.18)}",
@@ -34,7 +38,6 @@ window.__ModuleLoader__.load({
 			".dshm-btn-active{background:rgba(255,255,255,0.24);color:#fff}",
 			".dshm-body{padding:10px 12px 12px;border-top:1px solid rgba(255,255,255,0.14)}",
 			".dshm-row{display:flex;align-items:center;gap:8px;margin-top:7px}",
-			".dshm-cover-row{display:flex;align-items:center;gap:10px}",
 			".dshm-progress{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,0.26);position:relative;cursor:pointer;box-shadow:inset 0 1px 2px rgba(0,0,0,0.25)}",
 			".dshm-progress-fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#fff,rgba(255,255,255,0.72));box-shadow:0 0 8px rgba(255,255,255,0.5)}",
 			".dshm-time{font-size:10px;color:rgba(255,255,255,0.78);font-variant-numeric:tabular-nums;width:76px;text-align:center;flex:none;text-shadow:0 1px 3px rgba(0,0,0,0.3)}",
@@ -62,10 +65,7 @@ window.__ModuleLoader__.load({
 			".dshm-note{font-size:10px;color:rgba(255,255,255,0.55);margin-top:6px;line-height:14px}",
 			".dshm-panel{display:grid;grid-template-rows:0fr;opacity:0;transform:translateY(-10px);pointer-events:none;transition:grid-template-rows .36s cubic-bezier(.22,1,.36,1),opacity .2s ease-out,transform .36s cubic-bezier(.22,1,.36,1)}",
 			".dshm-card-expanded .dshm-panel{grid-template-rows:1fr;opacity:1;transform:translateY(0);pointer-events:auto}",
-			".dshm-panel-inner{overflow:hidden;min-height:0}",
-			".dshm-mini-wrap{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .3s cubic-bezier(.22,1,.36,1),opacity .16s ease-out}",
-			".dshm-card-expanded .dshm-mini-wrap{grid-template-rows:0fr;opacity:0;pointer-events:none}",
-			".dshm-mini-inner{overflow:hidden;min-height:0}"
+			".dshm-panel-inner{overflow:hidden;min-height:0}"
 		].join("");
 
 		/** Inject the player stylesheet once. */
@@ -618,63 +618,73 @@ window.__ModuleLoader__.load({
 
 			var expanded = !collapsed;
 			return h("div", { style: cardStyle }, h("div", { className: "dshm-card" + (expanded ? " dshm-card-expanded" : "") }, [
-				// 迷你条：折叠态常驻；展开时向上淡出收起
-				h("div", { className: "dshm-mini-wrap" }, h("div", { className: "dshm-mini-inner" }, h("div", {
-					className: "dshm-mini dshm-drag",
+				// 共享头部：封面/歌名/歌手在同一节点上做非线性尺寸过渡，
+				// 两种形态的按钮组交叉淡入淡出
+				h("div", {
+					className: "dshm-header dshm-drag" + (collapsed ? " dshm-header-mini" : ""),
 					onMouseDown: startDrag,
-					onClick: handleClick(toggleCollapsed)
+					onClick: collapsed ? handleClick(toggleCollapsed) : void 0
 				}, [
-					h(CoverArt, { cover: track ? track.cover : "", index: remote ? remote.index : 0 }),
+					h(CoverArt, { cover: track ? track.cover : "", index: remote ? remote.index : 0, large: expanded }),
 					h("div", { className: "dshm-meta" }, [
-						h("div", { className: "dshm-title" }, track ? track.title : "音乐播放器"),
-						h("div", { className: "dshm-artist" }, track ? track.artist : "点击展开")
+						h("div", { className: "dshm-title" }, track ? track.title : (expanded ? "未在播放" : "音乐播放器")),
+						h("div", { className: "dshm-artist" }, track ? track.artist : (expanded ? "点一首歌开始吧" : "点击展开"))
 					]),
-					h("button", {
-						className: "dshm-btn dshm-btn-primary",
-						title: remote && remote.playing ? "暂停" : "播放",
-						onClick: handleClick(function (event) {
-							event.stopPropagation();
-							run({ action: remote && remote.playing ? "pause" : "play" });
-						})
-					}, h(Icon, { name: remote && remote.playing ? "pause" : "play", size: 14 })),
-					h("button", {
-						className: "dshm-btn",
-						title: "下一首",
-						onClick: handleClick(function (event) {
-							event.stopPropagation();
-							run({ action: "next" });
-						})
-					}, h(Icon, { name: "next", size: 14 })),
-					h("button", {
-						className: "dshm-btn",
-						title: expanded ? "折叠" : "展开播放器",
-						onClick: handleClick(function (event) {
-							event.stopPropagation();
-							toggleCollapsed();
-						})
-					}, h(Icon, { name: expanded ? "chevronUp" : "chevronDown", size: 14 }))
-				]))),
-				// 展开面板：grid 行高非线性动画展开/收起
-				h("div", { className: "dshm-panel" }, h("div", { className: "dshm-panel-inner" }, [
-					h("div", { className: "dshm-body" }, [
-						h("div", { className: "dshm-cover-row dshm-drag", onMouseDown: startDrag }, [
-							h(CoverArt, { cover: track ? track.cover : "", index: remote ? remote.index : 0, large: true }),
-							h("div", { className: "dshm-meta" }, [
-								h("div", { className: "dshm-title" }, track ? track.title : "未在播放"),
-								h("div", { className: "dshm-artist" }, track ? track.artist : "点一首歌开始吧")
-							]),
+					h("div", { className: "dshm-head-actions" }, [
+						// 折叠态按钮组：播放 / 下一首 / 展开
+						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-out" : ""), key: "mini" }, [
+							h("button", {
+								className: "dshm-btn dshm-btn-primary",
+								title: remote && remote.playing ? "暂停" : "播放",
+								onClick: handleClick(function (event) {
+									event.stopPropagation();
+									run({ action: remote && remote.playing ? "pause" : "play" });
+								})
+							}, h(Icon, { name: remote && remote.playing ? "pause" : "play", size: 14 })),
+							h("button", {
+								className: "dshm-btn",
+								title: "下一首",
+								onClick: handleClick(function (event) {
+									event.stopPropagation();
+									run({ action: "next" });
+								})
+							}, h(Icon, { name: "next", size: 14 })),
+							h("button", {
+								className: "dshm-btn",
+								title: "展开播放器",
+								onClick: handleClick(function (event) {
+									event.stopPropagation();
+									toggleCollapsed();
+								})
+							}, h(Icon, { name: "chevronDown", size: 14 }))
+						]),
+						// 展开态按钮组：搜索切换 / 折叠
+						h("div", { className: "dshm-head-group" + (expanded ? "" : " dshm-head-group-out"), key: "full" }, [
 							h("button", {
 								className: "dshm-btn",
 								title: searchMode ? "返回播放列表" : "搜索网易云音乐",
-								onClick: handleClick(function () {
+								onClick: handleClick(function (event) {
+									event.stopPropagation();
 									setSearchMode(function (prev) {
 										if (!prev) { setSearchQuery(""); setResults(null); setSearchError(null); }
 										return !prev;
 									});
 								})
 							}, h(Icon, { name: searchMode ? "arrowLeft" : "search", size: 14 })),
-							h("button", { className: "dshm-btn", title: "折叠", onClick: handleClick(toggleCollapsed) }, h(Icon, { name: "chevronUp", size: 14 }))
-						]),
+							h("button", {
+								className: "dshm-btn",
+								title: "折叠",
+								onClick: handleClick(function (event) {
+									event.stopPropagation();
+									toggleCollapsed();
+								})
+							}, h(Icon, { name: "chevronUp", size: 14 }))
+						])
+					])
+				]),
+				// 展开面板：grid 行高非线性动画展开/收起
+				h("div", { className: "dshm-panel" }, h("div", { className: "dshm-panel-inner" }, [
+					h("div", { className: "dshm-body" }, [
 						h("div", { className: "dshm-row" }, [
 							h("div", {
 								className: "dshm-progress",
