@@ -16,7 +16,7 @@ window.__ModuleLoader__.load({
 		var STORE_X = "dsh-music:x";
 		var STORE_Y = "dsh-music:y";
 
-		/** Player chrome styles (compact, draggable, dark frosted-glass, APlayer-inspired). */
+		/** Player chrome styles (compact, draggable, dark frosted-glass). */
 		var CSS = [
 			"#dsh-music-root{position:fixed;left:0;top:0;z-index:2147483000;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;user-select:none}",
 			".dshm-card{width:" + WIDTH + "px;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03)),rgba(13,15,24,0.62);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,0.16);box-shadow:0 16px 48px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.18);color:#fff;cursor:default}",
@@ -256,7 +256,7 @@ window.__ModuleLoader__.load({
 		}
 
 		/**
-		 * The floating player. Compact, draggable, APlayer-inspired: mini bar
+		 * The floating player. Compact and draggable: the mini bar
 		 * collapses into a card with progress, volume, modes, the queue, and a
 		 * NetEase Cloud Music search panel.
 		 */
