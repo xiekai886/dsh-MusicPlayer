@@ -1,5 +1,7 @@
 # dsh-MusicPlayer 🎵
 
+[![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
+
 **这是一个可以让你边对话边听歌的 DeepSeek Harness 插件**，具有折叠和展开两种可自由拖动的悬浮窗口形态，利用 Meting API 等解析源接入网易云音乐，支持网易云歌单导入和按歌名或歌手搜索单曲导入。
 
 An animated floating music player plugin for DeepSeek Harness Web with a collapsible/expandable draggable frosted-glass card, deep NetEase Cloud Music integration (playlist import by link/ID, search by title/artist), a multi-layer audio source resolver (Meting → outer/url) that works around browser CORS and anti-leeching for maximum playable coverage, and an agent-facing music tool — queue, skip, pause, and control volume right from the chat. Zero external front-end dependencies.
