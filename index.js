@@ -14,6 +14,7 @@
  * @module
  */
 import { defineTool } from "@deepseek-ai/dsh-tools";
+import { createCipheriv, createPublicKey, publicEncrypt, randomBytes } from "node:crypto";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 
@@ -24,6 +25,13 @@ export const inject = ["webServer", "tools"];
 const NET_EASE_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 const NET_EASE_REFERER = "https://music.163.com/";
 const NET_EASE_COOKIE = "NMTID=00Kf3uH0LvXq0vXq0vXq0vXq0vXq0vXq";
+/** Optional logged-in NetEase cookie (e.g. MUSIC_U=...) that unlocks full tracks. */
+const DSH_MUSIC_COOKIE = process.env.DSH_MUSIC_COOKIE ?? "";
+
+/** weapi (official app protocol) crypto constants. */
+const WEAPI_MODULUS = "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7";
+const WEAPI_IV = "0102030405060708";
+const WEAPI_PRESET = "0CoJUm6Qyw8W8jud";
 /** A streamable NetEase track URL served by this plugin. */
 const neteaseStreamUrl = (id) => `/dsh-music/netease/stream?id=${encodeURIComponent(id)}`;
 
@@ -426,16 +434,67 @@ function resolveOuterUrl(id) {
 	});
 }
 
-/** Pick a playable CDN url: Meting first (cached), outer-link as fallback. */
+/** Pick a playable CDN url. Priority: logged-in weapi (full tracks, incl. VIP
+ * when the provided cookie has the entitlement) → Meting (full free tracks,
+ * trial for restricted ones) → outer-link (free tracks). */
 async function resolveStreamUrl(id) {
 	const cached = metingCache.get(id);
 	if (cached !== void 0 && Date.now() - cached.at < 480_000) return cached.url;
+	if (DSH_MUSIC_COOKIE !== "") {
+		const weapi = await resolveWeapiUrl(id);
+		if (weapi !== void 0) {
+			metingCache.set(id, { url: weapi, at: Date.now() });
+			return weapi;
+		}
+	}
 	const meting = await resolveMetingUrl(id);
 	if (meting !== void 0) {
 		metingCache.set(id, { url: meting, at: Date.now() });
 		return meting;
 	}
 	return await resolveOuterUrl(id);
+}
+
+/** weapi AES+RSA request body for the official player-url endpoint. */
+function weapiBody(payload) {
+	const secret = randomBytes(16);
+	const aes = (text, key) => {
+		const cipher = createCipheriv("aes-128-cbc", key, WEAPI_IV);
+		return cipher.update(text, "utf8", "base64") + cipher.final("base64");
+	};
+	const params = aes(aes(JSON.stringify(payload), WEAPI_PRESET), secret);
+	const jwk = { kty: "RSA", n: Buffer.from(WEAPI_MODULUS, "hex").toString("base64url"), e: "AQAB" };
+	const pub = createPublicKey({ key: jwk, format: "jwk" });
+	const encSecKey = publicEncrypt(
+		{ key: pub, padding: 1 }, // RSA_PKCS1_PADDING
+		Buffer.from(secret.toString("base64"), "utf8")
+	).toString("hex");
+	return `params=${encodeURIComponent(params)}&encSecKey=${encodeURIComponent(encSecKey)}`;
+}
+
+/** Resolve a full playable url via the official weapi endpoint using the
+ * optional logged-in cookie (DSH_MUSIC_COOKIE). Returns void on any failure. */
+async function resolveWeapiUrl(id) {
+	try {
+		const body = weapiBody({ ids: `[${id}]`, br: 320000, csrf_token: "", os: "pc", e_r: true });
+		const res = await fetch("https://music.163.com/weapi/song/enhance/player/url", {
+			method: "POST",
+			headers: {
+				"user-agent": NET_EASE_UA,
+				referer: NET_EASE_REFERER,
+				cookie: DSH_MUSIC_COOKIE,
+				"content-type": "application/x-www-form-urlencoded"
+			},
+			body,
+			signal: AbortSignal.timeout(12000)
+		});
+		if (!res.ok) return void 0;
+		const data = await res.json().catch(() => null);
+		const url = data?.data?.[0]?.url;
+		return typeof url === "string" && /^https?:\/\//.test(url) ? url : void 0;
+	} catch {
+		return void 0;
+	}
 }
 
 /** Write audio response head mirroring the upstream status and range headers. */
