@@ -31,6 +31,12 @@ window.__ModuleLoader__.load({
 			".dshm-head-group{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:0;pointer-events:none;transition:opacity .18s ease-out}",
 			".dshm-head-group-in{opacity:1;pointer-events:auto}",
 			".dshm-head-group-out{opacity:0;pointer-events:none}",
+			".dshm-play-btn{view-transition-name:dshm-play}",
+			".dshm-next-btn{view-transition-name:dshm-next}",
+			".dshm-head-group-out .dshm-play-btn,.dshm-head-group-out .dshm-next-btn{view-transition-name:none}",
+			".dshm-card:not(.dshm-card-expanded) .dshm-controls .dshm-play-btn,.dshm-card:not(.dshm-card-expanded) .dshm-controls .dshm-next-btn{view-transition-name:none}",
+			"::view-transition-group(dshm-play),::view-transition-group(dshm-next){animation-duration:.38s;animation-timing-function:cubic-bezier(.22,1,.36,1)}",
+			"::view-transition-old(root),::view-transition-new(root){animation:none}",
 			".dshm-artist{font-size:10.5px;line-height:14px;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn{flex:none;width:26px;height:26px;border:none;border-radius:9px;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0;text-shadow:0 1px 3px rgba(0,0,0,0.35)}",
 			".dshm-btn:hover{background:rgba(255,255,255,0.18)}",
@@ -503,28 +509,44 @@ window.__ModuleLoader__.load({
 			};
 
 			// FLIP shared play/next buttons between the header and the controls row:
-			// record the old rect before the state flips, then fly the new button
-			// from that rect to its resting place — no flash, no duplicate buttons.
+			// Shared play/next buttons between the header and the controls row.
+			// Preferred: the View Transitions API (browser-native same-element
+			// cross-position transition). Fallback: manual FLIP.
 			var playFlipRef = react.useRef(null);
 			var nextFlipRef = react.useRef(null);
 			var flipFromRef = react.useRef(null);
 
 			var toggleCollapsed = function () {
+				// Record the old button rects for the manual-FLIP fallback.
 				var p = playFlipRef.current;
 				var n = nextFlipRef.current;
 				flipFromRef.current = {
 					play: p ? p.getBoundingClientRect() : null,
 					next: n ? n.getBoundingClientRect() : null
 				};
-				setCollapsed(function (prev) {
-					var next = !prev;
-					try { localStorage.setItem(STORE_COLLAPSED, next ? "1" : "0"); } catch { /* ignore */ }
-					return next;
-				});
+				var apply = function () {
+					setCollapsed(function (prev) {
+						var next = !prev;
+						try { localStorage.setItem(STORE_COLLAPSED, next ? "1" : "0"); } catch { /* ignore */ }
+						return next;
+					});
+				};
+				if (document.startViewTransition && react_dom.flushSync) {
+					// Let the browser cross-fade/move the named view (play/next buttons)
+					// between their two DOM locations; flushSync forces the React DOM
+					// commit before the view snapshot is taken.
+					document.startViewTransition(function () {
+						react_dom.flushSync(apply);
+					});
+				} else {
+					apply();
+				}
 			};
 
-			// After the flip, animate the newly rendered play/next buttons from the
-			// recorded old positions to their new layout positions.
+			// Manual FLIP fallback (used when View Transitions is unavailable):
+			// animate the newly rendered buttons from the recorded old positions.
+			// The transform reset MUST happen on the next frame (rAF), otherwise
+			// the browser only ever paints the final frame and no motion occurs.
 			react.useLayoutEffect(function () {
 				var from = flipFromRef.current;
 				flipFromRef.current = null;
@@ -539,8 +561,10 @@ window.__ModuleLoader__.load({
 					el.style.transition = "none";
 					el.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
 					void el.getBoundingClientRect(); // commit the initial frame
-					el.style.transition = "transform .38s cubic-bezier(.22,1,.36,1)";
-					el.style.transform = "";
+					requestAnimationFrame(function () {
+						el.style.transition = "transform .38s cubic-bezier(.22,1,.36,1)";
+						el.style.transform = "";
+					});
 				};
 				fly(playFlipRef.current, from.play);
 				fly(nextFlipRef.current, from.next);
@@ -672,7 +696,7 @@ window.__ModuleLoader__.load({
 						h("div", { className: "dshm-head-group" + (expanded ? " dshm-head-group-out" : " dshm-head-group-in"), key: "mini" }, [
 							h("button", {
 								ref: playFlipRef,
-								className: "dshm-btn dshm-btn-primary",
+								className: "dshm-btn dshm-btn-primary dshm-play-btn",
 								title: remote && remote.playing ? "暂停" : "播放",
 								onClick: handleClick(function (event) {
 									event.stopPropagation();
@@ -681,7 +705,7 @@ window.__ModuleLoader__.load({
 							}, h(Icon, { name: remote && remote.playing ? "pause" : "play", size: 14 })),
 							h("button", {
 								ref: nextFlipRef,
-								className: "dshm-btn",
+								className: "dshm-btn dshm-next-btn",
 								title: "下一首",
 								onClick: handleClick(function (event) {
 									event.stopPropagation();
@@ -744,13 +768,13 @@ window.__ModuleLoader__.load({
 							h("button", { className: "dshm-btn", title: "上一首", onClick: handleClick(function () { run({ action: "prev" }); }) }, h(Icon, { name: "prev", size: 15 })),
 							h("button", {
 								ref: playFlipRef,
-								className: "dshm-btn dshm-btn-primary",
+								className: "dshm-btn dshm-btn-primary dshm-play-btn",
 								title: remote && remote.playing ? "暂停" : "播放",
 								onClick: handleClick(function () { run({ action: remote && remote.playing ? "pause" : "play" }); })
 							}, h(Icon, { name: remote && remote.playing ? "pause" : "play", size: 16 })),
 							h("button", {
 								ref: nextFlipRef,
-								className: "dshm-btn",
+								className: "dshm-btn dshm-next-btn",
 								title: "下一首",
 								onClick: handleClick(function () { run({ action: "next" }); })
 							}, h(Icon, { name: "next", size: 15 })),
