@@ -301,8 +301,11 @@ window.__ModuleLoader__.load({
 			react.useEffect(restorePos, []);
 
 			// Keep the card inside the viewport (height changes when collapsing).
+			// Measure the real height instead of estimating: the expanded card is
+			// ~360px, not 440, so a fixed estimate would leave the card unable to
+			// reach the bottom of the viewport.
 			react.useEffect(function () {
-				var height = collapsed ? 52 : 440;
+				var height = cardRef.current ? cardRef.current.offsetHeight : (collapsed ? 52 : 360);
 				var p = posRef.current;
 				if (p) {
 					var clamped = {
@@ -469,7 +472,7 @@ window.__ModuleLoader__.load({
 				var dy = event.clientY - drag.startY;
 				if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
 				drag.moved = true;
-				var height = collapsed ? 52 : 440;
+				var height = cardRef.current ? cardRef.current.offsetHeight : (collapsed ? 52 : 360);
 				var baseX = drag.origX !== null ? drag.origX : window.innerWidth - WIDTH - 18;
 				var baseY = drag.origY !== null ? drag.origY : window.innerHeight - height - 18;
 				var x = Math.max(4, Math.min(window.innerWidth - WIDTH - 4, baseX + dx));
@@ -585,6 +588,7 @@ window.__ModuleLoader__.load({
 			// ── draggable progress bar ─────────────────────────────────────────
 			var progressRef = react.useRef(null);
 			var draggingRef = react.useRef(false);
+			var cardRef = react.useRef(null);
 			var [dragRatio, setDragRatio] = react.useState(null);
 
 			// Seek to a 0..1 position; only meaningful when the duration is finite
@@ -679,10 +683,9 @@ window.__ModuleLoader__.load({
 			var cardStyle = pos
 				? { position: "fixed", left: pos.x, top: pos.y }
 				: { position: "fixed", right: 18, bottom: 18 };
-			var height = collapsed ? 52 : 440;
 
 			var expanded = !collapsed;
-			return h("div", { style: cardStyle }, h("div", { className: "dshm-card" + (expanded ? " dshm-card-expanded" : "") }, [
+			return h("div", { style: cardStyle, ref: cardRef }, h("div", { className: "dshm-card" + (expanded ? " dshm-card-expanded" : "") }, [
 				// 共享头部：封面/歌名/歌手在同一节点上做非线性尺寸过渡，
 				// 两种形态的按钮组交叉淡入淡出
 				h("div", {
