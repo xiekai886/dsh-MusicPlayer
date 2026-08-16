@@ -27,6 +27,9 @@ const NET_EASE_REFERER = "https://music.163.com/";
 const NET_EASE_COOKIE = "NMTID=00Kf3uH0LvXq0vXq0vXq0vXq0vXq0vXq";
 /** Optional logged-in NetEase cookie (e.g. MUSIC_U=...) that unlocks full tracks. */
 const DSH_MUSIC_COOKIE = process.env.DSH_MUSIC_COOKIE ?? "";
+/** Optional cloud proxy base (e.g. http://1.2.3.4:3000/<token>): when set, VIP
+ *  full tracks are resolved through the cloud proxy (eapi + VIP session). */
+const DSH_MUSIC_API = process.env.DSH_MUSIC_API ?? "";
 
 /** weapi (official app protocol) crypto constants. */
 const WEAPI_MODULUS = "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7";
@@ -434,12 +437,20 @@ function resolveOuterUrl(id) {
 	});
 }
 
-/** Pick a playable CDN url. Priority: logged-in weapi (full tracks, incl. VIP
- * when the provided cookie has the entitlement) → Meting (full free tracks,
- * trial for restricted ones) → outer-link (free tracks). */
+/** Pick a playable CDN url. Priority: cloud proxy (VIP full tracks via eapi)
+ * → logged-in weapi (full tracks, incl. VIP when the provided cookie has the
+ * entitlement) → Meting (full free tracks, trial for restricted ones) →
+ * outer-link (free tracks). */
 async function resolveStreamUrl(id) {
 	const cached = metingCache.get(id);
 	if (cached !== void 0 && Date.now() - cached.at < 480_000) return cached.url;
+	if (DSH_MUSIC_API !== "") {
+		const cloud = await resolveCloudUrl(id);
+		if (cloud !== void 0) {
+			metingCache.set(id, { url: cloud, at: Date.now() });
+			return cloud;
+		}
+	}
 	if (DSH_MUSIC_COOKIE !== "") {
 		const weapi = await resolveWeapiUrl(id);
 		if (weapi !== void 0) {
@@ -453,6 +464,22 @@ async function resolveStreamUrl(id) {
 		return meting;
 	}
 	return await resolveOuterUrl(id);
+}
+
+/** Resolve a full playable url via the cloud proxy (DSH_MUSIC_API). */
+async function resolveCloudUrl(id) {
+	try {
+		const base = DSH_MUSIC_API.replace(/\/+$/, "");
+		const res = await fetch(`${base}/song/url?id=${encodeURIComponent(id)}&level=exhigh`, {
+			signal: AbortSignal.timeout(12000)
+		});
+		if (!res.ok) return void 0;
+		const data = await res.json().catch(() => null);
+		const url = data?.url;
+		return typeof url === "string" && /^https?:\/\//.test(url) ? url : void 0;
+	} catch {
+		return void 0;
+	}
 }
 
 /** weapi AES+RSA request body for the official player-url endpoint. */
